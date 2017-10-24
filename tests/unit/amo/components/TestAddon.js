@@ -16,7 +16,6 @@ import Addon, {
 } from 'amo/components/Addon';
 import AddonCompatibilityError from 'amo/components/AddonCompatibilityError';
 import AddonMeta from 'amo/components/AddonMeta';
-import RatingsBreakdown from 'amo/components/RatingsBreakdown';
 import AddonMoreInfo from 'amo/components/AddonMoreInfo';
 import NotFound from 'amo/components/ErrorPage/NotFound';
 import Link from 'amo/components/Link';
@@ -254,7 +253,6 @@ describe(__filename, () => {
     // These should render with an empty addon (they will show their own
     // loading state).
     expect(root.find(AddonMeta)).toHaveProp('addon', null);
-    expect(root.find(RatingsBreakdown)).toHaveProp('addon', null);
     expect(root.find(AddonMoreInfo)).toHaveProp('addon', null);
     expect(root.find(AddonMoreInfo)).toHaveLength(1);
 
@@ -742,11 +740,10 @@ describe(__filename, () => {
     expect(root.find(AddonMoreInfo)).toHaveLength(1);
   });
 
-  it('renders meta data and ratings card for the add-on', () => {
+  it('renders meta data for the add-on', () => {
     const addon = createInternalAddon(fakeAddon);
     const root = shallowRender({ addon });
     expect(root.find(AddonMeta).prop('addon')).toEqual(addon);
-    expect(root.find(RatingsBreakdown).prop('addon')).toEqual(addon);
   });
 
   describe('read reviews footer', () => {
