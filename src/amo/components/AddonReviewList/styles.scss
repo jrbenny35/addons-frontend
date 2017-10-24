@@ -1,57 +1,63 @@
-@import "~amo/css/inc/vars";
 @import "~core/css/inc/mixins";
+@import "~amo/css/inc/vars";
+@import "~ui/css/vars";
 
 .AddonReviewList {
-  padding: $padding-page;
+  margin: $padding-page;
 
   @include respond-to(large) {
-    padding: $padding-page-l;
+    display: flex;
+    margin: $padding-page-l;
   }
 
   .CardList {
-    margin-bottom: $vertical-space-xs;
+    margin: 0 0 $vertical-space-xs;
+  }
+}
+
+.AddonReviewList-addon {
+  @include respond-to(large) {
+    min-width: 300px;
+    width: 35%;
+  }
+}
+
+.AddonReviewList-reviews {
+  @include respond-to(large) {
+    @include margin-start(12px);
+
+    width: 65%;
   }
 }
 
 .AddonReviewList-header {
-  align-items: center;
   display: flex;
-  margin: 15px 0;
+  padding: 12px 0;
+}
 
-  .AddonReviewList-header-text {
-    // Flex implicitly sets `min-width: auto`; to force the overflow fix
-    // for https://github.com/mozilla/addons-frontend/issues/2415
-    // we set a min-width.
-    min-width: 1%;
+.AddonReviewList-header-icon {
+  @include margin-end(18px);
+}
 
-    > h2,
-    > h3 {
-      font-size: 1.1em;
-    }
+.AddonReviewList-header-addonName {
+  font-size: $font-size-m;
+  margin: 0;
+  padding: 0;
 
-    > h2 {
-      margin: 0 0 5px;
-      padding-top: 10px;
-    }
-
-    > h3 {
-      font-weight: normal;
-      margin: 0;
-    }
-
-    a:link,
-    a:visited,
-    a:hover,
-    a:active {
-      color: $primary-font-color;
-      font-weight: normal;
-      text-decoration: none;
-      word-wrap: break-word;
-    }
+  a,
+  a:link {
+    color: $link-color;
+    text-decoration: none;
   }
+}
 
-  .AddonReviewList-header-icon {
-    margin: 0 20px;
-    padding-top: 6px;
+.AddonReviewList-header-authors {
+  font-size: font-size-m;
+  margin: 0;
+  padding: 0;
+
+  a,
+  a:link {
+    color: $black;
   }
 }

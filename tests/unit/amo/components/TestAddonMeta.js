@@ -1,6 +1,6 @@
 import React from 'react';
 
-import AddonMeta, { AddonMetaBase } from 'amo/components/AddonMeta';
+import AddonMeta, { AddonMetaBase, Loading } from 'amo/components/AddonMeta';
 import Link from 'amo/components/Link';
 import { createInternalAddon } from 'core/reducers/addons';
 import {
@@ -32,22 +32,21 @@ describe(__filename, () => {
 
   it('can render without an addon', () => {
     const root = render({ addon: null });
-    expect(root.find('.AddonMeta-user-count').find(LoadingText))
-      .toHaveLength(1);
-    expect(root.find('.AddonMeta-review-count').find(LoadingText))
-      .toHaveLength(1);
-    expect(root.find(Rating).prop('rating')).toEqual(null);
+    expect(root.find('.AddonMeta-user-count').type()).toEqual(Loading);
+    expect(root.find('.AddonMeta-review-count').type()).toEqual(Loading);
+    expect(root.find('.AddonMeta-rating').type()).toEqual(Loading);
   });
 
   describe('average daily users', () => {
     function getUserCount(root) {
-      return root.find('.AddonMeta-user-count').text();
+      return root.find('.AddonMeta-user-count').render().text();
     }
 
     it('renders the user count', () => {
       const root = render({
         addon: createInternalAddon({ ...fakeAddon, average_daily_users: 2 }),
       });
+
       expect(getUserCount(root)).toEqual('2 users');
     });
 
@@ -55,6 +54,7 @@ describe(__filename, () => {
       const root = render({
         addon: createInternalAddon({ ...fakeAddon, average_daily_users: 1 }),
       });
+
       expect(getUserCount(root)).toEqual('1 user');
     });
 
@@ -68,58 +68,6 @@ describe(__filename, () => {
         i18n,
       });
       expect(getUserCount(root)).toMatch(/^1\.000/);
-    });
-
-    it('does not link to stats if user is not author of the add-on', () => {
-      const authorUserId = 11;
-      const addon = createInternalAddon({
-        ...fakeAddon,
-        slug: 'coolio',
-        authors: [
-          {
-            ...fakeAddon.authors[0],
-            id: authorUserId,
-            name: 'tofumatt',
-            picture_url: 'http://cdn.a.m.o/myphoto.jpg',
-            url: 'http://a.m.o/en-GB/firefox/user/tofumatt/',
-            username: 'tofumatt',
-          },
-        ],
-      });
-      const root = render({
-        addon,
-        store: dispatchSignInActions({ userId: 5 }).store,
-      });
-
-      const statsLink = root.find('.AddonMeta-user-count').find(Link);
-      expect(statsLink).toHaveLength(0);
-    });
-
-    it('links to stats if add-on author is viewing the page', () => {
-      const authorUserId = 11;
-      const addon = createInternalAddon({
-        ...fakeAddon,
-        slug: 'coolio',
-        authors: [
-          {
-            ...fakeAddon.authors[0],
-            id: authorUserId,
-            name: 'tofumatt',
-            picture_url: 'http://cdn.a.m.o/myphoto.jpg',
-            url: 'http://a.m.o/en-GB/firefox/user/tofumatt/',
-            username: 'tofumatt',
-          },
-        ],
-      });
-      const root = render({
-        addon,
-        store: dispatchSignInActions({ userId: authorUserId }).store,
-      });
-
-      const statsLink = root.find('.AddonMeta-user-count').find(Link);
-      expect(statsLink).toHaveLength(1);
-      expect(statsLink).toHaveProp('title', 'Click to view statistics');
-      expect(statsLink).toHaveProp('href', '/addon/coolio/statistics/');
     });
   });
 
@@ -138,7 +86,7 @@ describe(__filename, () => {
     }
 
     function getReviewCount(root) {
-      return root.find('.AddonMeta-review-count').text();
+      return root.find('.AddonMeta-review-count').render().text();
     }
 
     it('renders a count of multiple ratings', () => {

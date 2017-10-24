@@ -28,6 +28,27 @@
   }
 }
 
+.Addon-header-wrapper {
+  @include respond-to(large) {
+    display: flex;
+  }
+}
+
+.Addon-header-info-card {
+  @include respond-to(large) {
+    @include margin-end(12px);
+
+    width: 65%;
+  }
+}
+
+.Addon-header-meta-and-ratings {
+  @include respond-to(large) {
+    min-width: 300px;
+    width: 35%;
+  }
+}
+
 .Addon-title {
   color: $black;
   font-size: $font-size-l;

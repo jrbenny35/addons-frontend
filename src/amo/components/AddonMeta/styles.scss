@@ -1,0 +1,45 @@
+@import "~core/css/inc/mixins";
+@import "~amo/css/inc/vars";
+@import "~ui/css/vars";
+
+$background: #f8f9fa;
+
+.AddonMeta .Card-contents {
+  background: $background;
+  width: 100%;
+}
+
+.AddonMeta-item {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.AddonMeta-text,
+.AddonMeta-loading-wrapper {
+  @include text-align-start();
+
+  margin: 0 12px;
+  padding: 0;
+  max-width: 30%;
+}
+
+.AddonMeta-item-header {
+  display: block;
+  height: 17px;
+  margin: 0;
+  padding: 0;
+}
+
+.AddonMeta-item-subheader {
+  @include font-light();
+
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+.AddonMeta .Rating-star-group {
+  @include margin-end(-2.5px);
+  @include margin-start(-2.5px);
+}
