@@ -112,7 +112,7 @@ export class AddonReviewListBase extends React.Component<Props> {
 
   render() {
     const {
-      addon, errorHandler, location, params, i18n, reviewCount, reviews,
+      addon, errorHandler, location, i18n, reviewCount, reviews,
     } = this.props;
 
     if (errorHandler.hasError()) {
@@ -131,10 +131,6 @@ export class AddonReviewListBase extends React.Component<Props> {
       ) {
         return <NotFound />;
       }
-    }
-
-    if (!params.addonSlug) {
-      throw new Error('params.addonSlug cannot be falsey');
     }
 
     // When reviews have not loaded yet, make a list of 4 empty reviews
@@ -174,7 +170,7 @@ export class AddonReviewListBase extends React.Component<Props> {
     }
 
     const authorProps = {};
-    if (addon) {
+    if (addon && addon.authors) {
       const authorList = addon.authors.map(
         (author) => oneLine`
         <a
@@ -193,8 +189,13 @@ export class AddonReviewListBase extends React.Component<Props> {
       );
       authorProps.dangerouslySetInnerHTML = sanitizeHTML(title, ['a', 'span']);
     } else {
-      authorProps.children = <LoadingText />
+      authorProps.children = <LoadingText />;
     }
+    /* eslint-disable jsx-a11y/heading-has-content */
+    const authorsHTML = (
+      <h3 className="AddonReviewList-header-authors" {...authorProps} />
+    );
+    /* eslint-enable jsx-a11y/heading-has-content */
 
     return (
       <div className="AddonReviewList">
@@ -216,7 +217,7 @@ export class AddonReviewListBase extends React.Component<Props> {
               <h2 className="AddonReviewList-header-addonName">
                 {addonName}
               </h2>
-              <h3 className="AddonReviewList-header-authors" {...authorProps} />
+              {authorsHTML}
             </div>
           </div>
 

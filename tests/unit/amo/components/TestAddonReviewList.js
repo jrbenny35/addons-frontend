@@ -92,7 +92,7 @@ describe(__filename, () => {
       expect(root.find('.AddonReviewList-header-icon img').prop('src'))
         .toEqual(fallbackIcon);
       expect(root.find('.AddonReviewList-header-text').find(LoadingText))
-        .toHaveLength(2);
+        .toHaveLength(3);
 
       // Make sure four review placeholders were rendered.
       expect(root.find(AddonReviewListItem)).toHaveLength(4);

@@ -1,16 +1,18 @@
+import { shallow } from 'enzyme';
 import React from 'react';
 
-import AddonMeta, { AddonMetaBase, Loading } from 'amo/components/AddonMeta';
-import Link from 'amo/components/Link';
+import AddonMeta, {
+  DEFAULT_LOADING_WIDTH,
+  AddonMetaBase,
+  LoadingWrapper,
+} from 'amo/components/AddonMeta';
 import { createInternalAddon } from 'core/reducers/addons';
 import {
   dispatchClientMetadata,
-  dispatchSignInActions,
   fakeAddon,
 } from 'tests/unit/amo/helpers';
 import { fakeI18n, shallowUntilTarget } from 'tests/unit/helpers';
 import LoadingText from 'ui/components/LoadingText';
-import Rating from 'ui/components/Rating';
 
 
 describe(__filename, () => {
@@ -32,9 +34,9 @@ describe(__filename, () => {
 
   it('can render without an addon', () => {
     const root = render({ addon: null });
-    expect(root.find('.AddonMeta-user-count').type()).toEqual(Loading);
-    expect(root.find('.AddonMeta-review-count').type()).toEqual(Loading);
-    expect(root.find('.AddonMeta-rating').type()).toEqual(Loading);
+    expect(root.find('.AddonMeta-user-count').type()).toEqual(LoadingWrapper);
+    expect(root.find('.AddonMeta-review-count').type()).toEqual(LoadingWrapper);
+    expect(root.find('.AddonMeta-rating').type()).toEqual(LoadingWrapper);
   });
 
   describe('average daily users', () => {
@@ -103,6 +105,42 @@ describe(__filename, () => {
       const i18n = fakeI18n({ lang: 'de' });
       const root = renderRatings({ count: 1000 }, { i18n });
       expect(getReviewCount(root)).toContain('1.000');
+    });
+  });
+
+  describe('LoadingText Wrapper Component', () => {
+    function renderLoading({
+      i18n = fakeI18n(),
+      ...props
+    } = {}) {
+      return shallow(
+        <LoadingWrapper i18n={i18n} {...props} />
+      );
+    }
+
+    it('renders LoadingText', () => {
+      const root = renderLoading();
+
+      expect(root.find('.AddonMeta-loading-wrapper')).toHaveLength(1);
+      expect(root.find(LoadingText)).toHaveLength(1);
+    });
+
+    it('uses a width if supplied', () => {
+      const root = renderLoading({ width: 50 });
+
+      expect(root.find(LoadingText)).toHaveProp('width', 50);
+    });
+
+    it('uses a default width if no width is supplied', () => {
+      const root = renderLoading();
+
+      expect(root.find(LoadingText)).toHaveProp('width', DEFAULT_LOADING_WIDTH);
+    });
+
+    it('outputs a className', () => {
+      const root = renderLoading({ className: 'TestClass' });
+
+      expect(root).toHaveClassName('TestClass');
     });
   });
 });

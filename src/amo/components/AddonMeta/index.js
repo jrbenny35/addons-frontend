@@ -1,11 +1,10 @@
 /* @flow */
+import classNames from 'classnames';
 import React from 'react';
-import { connect } from 'react-redux';
 import { compose } from 'redux';
 
-import Link from 'amo/components/Link';
 import translate from 'core/i18n/translate';
-import { isAddonAuthor, sanitizeHTML } from 'core/utils';
+import { sanitizeHTML } from 'core/utils';
 import type { AddonType } from 'core/types/addons';
 import Card from 'ui/components/Card';
 import LoadingText from 'ui/components/LoadingText';
@@ -14,21 +13,25 @@ import type { I18nType } from 'core/types/i18n';
 
 import './styles.scss';
 
-type LoadingProps = {|
+type LoadingWrapperProps = {|
   children: any,
+  className?: string,
+  width?: number,
 |};
 
-export const Loading = (props: LoadingProps) => {
+export const DEFAULT_LOADING_WIDTH = 40;
+
+export const LoadingWrapper = (props: LoadingWrapperProps) => {
   return (
-    <div className="AddonMeta-loading-wrapper">
+    <div className={classNames('AddonMeta-loading-wrapper', props.className)}>
       <LoadingText
         className="AddonMeta-item-header"
-        width={props.width || 40}
+        width={props.width || DEFAULT_LOADING_WIDTH}
       />
       <span className="AddonMeta-item-subheader">{props.children}</span>
     </div>
   );
-}
+};
 
 
 type Props = {|
@@ -84,6 +87,7 @@ export class AddonMetaBase extends React.Component<Props> {
       reviewCount = i18n.gettext('No reviews');
     }
 
+    /* eslint-disable react/no-danger */
     return (
       <Card className="AddonMeta">
         <div className="AddonMeta-item AddonMeta-users">
@@ -94,9 +98,9 @@ export class AddonMetaBase extends React.Component<Props> {
               dangerouslySetInnerHTML={sanitizeHTML(userCount, ['span'])}
             />
           ) : (
-            <Loading className="AddonMeta-user-count">
+            <LoadingWrapper className="AddonMeta-user-count">
               {i18n.gettext('users')}
-            </Loading>
+            </LoadingWrapper>
           )}
 
           {reviewCount ? (
@@ -105,9 +109,9 @@ export class AddonMetaBase extends React.Component<Props> {
               dangerouslySetInnerHTML={sanitizeHTML(reviewCount, ['span'])}
             />
           ) : (
-            <Loading className="AddonMeta-review-count">
+            <LoadingWrapper className="AddonMeta-review-count">
               {i18n.gettext('reviews')}
-            </Loading>
+            </LoadingWrapper>
           )}
           {averageRating ? (
             <div className="AddonMeta-text AddonMeta-rating">
@@ -122,13 +126,14 @@ export class AddonMetaBase extends React.Component<Props> {
               </span>
             </div>
           ) : (
-            <Loading className="AddonMeta-rating" width={100}>
+            <LoadingWrapper className="AddonMeta-rating" width={100}>
               {i18n.gettext('Average Rating')}
-            </Loading>
+            </LoadingWrapper>
           )}
         </div>
       </Card>
     );
+    /* eslint-enable react/no-danger */
   }
 }
 

@@ -12,7 +12,6 @@ import AddonMeta from 'amo/components/AddonMeta';
 import AddonMoreInfo from 'amo/components/AddonMoreInfo';
 import NotFound from 'amo/components/ErrorPage/NotFound';
 import DefaultRatingManager from 'amo/components/RatingManager';
-import RatingsBreakdown from 'amo/components/RatingsBreakdown';
 import ScreenShots from 'amo/components/ScreenShots';
 import Link from 'amo/components/Link';
 import { fetchOtherAddonsByAuthors } from 'amo/reducers/addonsByAuthors';
