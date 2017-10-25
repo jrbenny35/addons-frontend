@@ -515,6 +515,7 @@ export class AddonBase extends React.Component {
                   className="Button--wide"
                   disabled={!isCompatible}
                   ref={(ref) => { this.installButton = ref; }}
+                  src={src}
                   status={installStatus}
                   useButton
                 /> : null
