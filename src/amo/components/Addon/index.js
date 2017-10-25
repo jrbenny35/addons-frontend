@@ -536,7 +536,7 @@ export class AddonBase extends React.Component {
             ) : null}
           </Card>
 
-          <Card className="Addon-header-meta-and-ratings">
+          <Card className="Addon-header-meta-and-ratings" photonStyle>
             <AddonMeta addon={addon} />
           </Card>
         </div>
