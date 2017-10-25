@@ -2,13 +2,6 @@
 @import "~amo/css/inc/vars";
 @import "~ui/css/vars";
 
-$background: #f8f9fa;
-
-.AddonMeta .Card-contents {
-  background: $background;
-  width: 100%;
-}
-
 .AddonMeta-item {
   display: flex;
   justify-content: space-between;
@@ -19,7 +12,7 @@ $background: #f8f9fa;
 .AddonMeta-loading-wrapper {
   @include text-align-start();
 
-  margin: 0 12px;
+  margin: 0;
   max-width: 30%;
   padding: 0;
 }

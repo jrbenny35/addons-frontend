@@ -1,37 +1,14 @@
 /* @flow */
-import classNames from 'classnames';
 import React from 'react';
 import { compose } from 'redux';
 
 import translate from 'core/i18n/translate';
-import { sanitizeHTML } from 'core/utils';
 import type { AddonType } from 'core/types/addons';
-import Card from 'ui/components/Card';
-import LoadingText from 'ui/components/LoadingText';
+import MetadataCard from 'ui/components/MetadataCard';
 import Rating from 'ui/components/Rating';
 import type { I18nType } from 'core/types/i18n';
 
 import './styles.scss';
-
-type LoadingWrapperProps = {|
-  children: any,
-  className?: string,
-  width?: number,
-|};
-
-export const DEFAULT_LOADING_WIDTH = 40;
-
-export const LoadingWrapper = (props: LoadingWrapperProps) => {
-  return (
-    <div className={classNames('AddonMeta-loading-wrapper', props.className)}>
-      <LoadingText
-        className="AddonMeta-item-header"
-        width={props.width || DEFAULT_LOADING_WIDTH}
-      />
-      <span className="AddonMeta-item-subheader">{props.children}</span>
-    </div>
-  );
-};
 
 
 type Props = {|
@@ -45,95 +22,60 @@ export class AddonMetaBase extends React.Component<Props> {
     const averageRating = addon && addon.ratings ? addon.ratings.average : null;
     const addonRatingCount = addon && addon.ratings ?
       addon.ratings.count : null;
+    const averageDailyUsers = addon ? addon.average_daily_users : null;
 
-    let userCount;
-    if (addon) {
-      const averageDailyUsers = addon.average_daily_users;
-      userCount = i18n.sprintf(
-        i18n.ngettext(
-          '%(startTag)s%(total)s%(endTag)s %(startSubTag)suser%(endSubTag)s',
-          '%(startTag)s%(total)s%(endTag)s %(startSubTag)susers%(endSubTag)s',
-          averageDailyUsers
-        ), {
-          endSubTag: '</span>',
-          startSubTag: '<span class="AddonMeta-item-subheader">',
-          endTag: '</span>',
-          startTag: '<span class="AddonMeta-item-header">',
-          total: i18n.formatNumber(averageDailyUsers),
-        },
-      );
-    } else {
+    let userCount = '';
+    let userTitle;
+    if (!addon) {
       userCount = null;
+      userTitle = i18n.gettext('Users');
+    } else if (averageDailyUsers) {
+      userCount = i18n.formatNumber(averageDailyUsers);
+      userTitle = i18n.ngettext('User', 'Users', averageDailyUsers);
+    } else {
+      userTitle = i18n.gettext('No Users');
     }
 
-    let reviewCount;
+    let reviewCount = '';
+    let reviewTitle;
     if (!addon) {
       reviewCount = null;
+      reviewTitle = i18n.gettext('Reviews');
     } else if (addonRatingCount) {
-      reviewCount = i18n.sprintf(
-        i18n.ngettext(
-          '%(startTag)s%(total)s%(endTag)s %(startSubTag)sreview%(endSubTag)s',
-          '%(startTag)s%(total)s%(endTag)s %(startSubTag)sreviews%(endSubTag)s',
-          addonRatingCount
-        ), {
-          endSubTag: '</span>',
-          startSubTag: '<span class="AddonMeta-item-subheader">',
-          endTag: '</span>',
-          startTag: '<span class="AddonMeta-item-header">',
-          total: i18n.formatNumber(addonRatingCount),
-        },
-      );
+      reviewCount = i18n.formatNumber(addonRatingCount);
+      reviewTitle = i18n.ngettext('Review', 'Reviews', addonRatingCount);
     } else {
-      reviewCount = i18n.gettext('No reviews');
+      reviewTitle = i18n.gettext('No Reviews');
     }
 
-    /* eslint-disable react/no-danger */
     return (
-      <Card className="AddonMeta">
-        <div className="AddonMeta-item AddonMeta-users">
-          <h3 className="visually-hidden">{i18n.gettext('Used by')}</h3>
-          {userCount ? (
-            <div
-              className="AddonMeta-text AddonMeta-user-count"
-              dangerouslySetInnerHTML={sanitizeHTML(userCount, ['span'])}
-            />
-          ) : (
-            <LoadingWrapper className="AddonMeta-user-count">
-              {i18n.gettext('users')}
-            </LoadingWrapper>
-          )}
-
-          {reviewCount ? (
-            <div
-              className="AddonMeta-text AddonMeta-review-count"
-              dangerouslySetInnerHTML={sanitizeHTML(reviewCount, ['span'])}
-            />
-          ) : (
-            <LoadingWrapper className="AddonMeta-review-count">
-              {i18n.gettext('reviews')}
-            </LoadingWrapper>
-          )}
-          {averageRating ? (
-            <div className="AddonMeta-text AddonMeta-rating">
-              <Rating
-                className="AddonMeta-item-header"
-                rating={averageRating}
-                readOnly
-                styleName="small"
-              />
-              <span className="AddonMeta-item-subheader">
-                {i18n.gettext('Average Rating')}
-              </span>
-            </div>
-          ) : (
-            <LoadingWrapper className="AddonMeta-rating" width={100}>
-              {i18n.gettext('Average Rating')}
-            </LoadingWrapper>
-          )}
-        </div>
-      </Card>
+      <div className="AddonMeta">
+        <h3 className="visually-hidden">{i18n.gettext('Used by')}</h3>
+        <MetadataCard
+          metadata={[
+            {
+              content: userCount,
+              title: userTitle,
+            },
+            {
+              content: reviewCount,
+              title: reviewTitle,
+            },
+            {
+              content: (
+                <Rating
+                  className="AddonMeta-item-header"
+                  rating={averageRating}
+                  readOnly
+                  styleName="small"
+                />
+              ),
+              title: i18n.gettext('Overall Rating'),
+            },
+          ]}
+        />
+      </div>
     );
-    /* eslint-enable react/no-danger */
   }
 }
 

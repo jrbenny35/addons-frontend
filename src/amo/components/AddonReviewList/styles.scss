@@ -3,11 +3,11 @@
 @import "~ui/css/vars";
 
 .AddonReviewList {
-  margin: $padding-page;
+  padding: $padding-page;
 
   @include respond-to(large) {
     display: flex;
-    margin: $padding-page-l;
+    padding: $padding-page-l;
   }
 
   .CardList {
@@ -24,7 +24,7 @@
 
 .AddonReviewList-reviews {
   @include respond-to(large) {
-    @include margin-start(12px);
+    @include margin-start($padding-page-l);
 
     width: 65%;
   }
@@ -32,7 +32,7 @@
 
 .AddonReviewList-header {
   display: flex;
-  padding: 12px 0;
+  padding: $padding-page-l 0;
 }
 
 .AddonReviewList-header-icon {

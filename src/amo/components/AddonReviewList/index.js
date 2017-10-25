@@ -171,15 +171,14 @@ export class AddonReviewListBase extends React.Component<Props> {
 
     const authorProps = {};
     if (addon && addon.authors) {
-      const authorList = addon.authors.map(
-        (author) => oneLine`
-        <a
-          class="AddonReviewList-addon-author-link"
-          href="${author.url}"
-        >
-          ${author.name}
-        </a>`
-      );
+      const authorList = addon.authors.map((author) => {
+        return author.url ? oneLine`
+          <a
+            class="AddonReviewList-addon-author-link"
+            href="${author.url}"
+          >${author.name}</a>`
+          : author.name;
+      });
       const title = i18n.sprintf(
         // translators: Example: by The Author, The Next Author
         i18n.gettext('by %(authorList)s'), {
@@ -224,7 +223,7 @@ export class AddonReviewListBase extends React.Component<Props> {
           {addon ? (
             <RatingManager
               addon={addon}
-              location={{}}
+              location={location}
               version={addon.current_version}
             />
           ) : null}
