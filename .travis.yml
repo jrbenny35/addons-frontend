@@ -44,23 +44,23 @@ jobs:
       language: python
       python: 3.6
       <<: *ui-tests
-      env: NODE=6
       install: nvm install 6
     - stage:
       language: python
       python: 3.6
       <<: *ui-tests
-      env: NODE=8
       install: nvm install 8
     - stage:
       language: python
       python: 3.6
       env: TOXENV=flake8
+      install: tox
       script: tox
     - stage:
       language: python
       python: 3.6
       env: TOXENV=dennis-lint
+      install: tox
       script: tox
     - stage:
       <<: *node6
