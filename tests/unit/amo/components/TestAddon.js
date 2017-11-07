@@ -39,6 +39,7 @@ import {
   ADDON_TYPE_LANG,
   ADDON_TYPE_OPENSEARCH,
   ADDON_TYPE_THEME,
+  CLIENT_APP_FIREFOX,
   ENABLED,
   INCOMPATIBLE_NOT_FIREFOX,
   INSTALLED,
@@ -47,8 +48,8 @@ import {
 import InstallButton from 'core/components/InstallButton';
 import { ErrorHandler } from 'core/errorHandler';
 import I18nProvider from 'core/i18n/Provider';
+import { sendServerRedirect } from 'core/reducers/redirectTo';
 import {
-  createFakeAddon,
   dispatchClientMetadata,
   dispatchSignInActions,
   fakeAddon,
@@ -64,7 +65,6 @@ import {
 } from 'tests/unit/helpers';
 import ErrorList from 'ui/components/ErrorList';
 import LoadingText from 'ui/components/LoadingText';
-import Badge from 'ui/components/Badge';
 
 
 function renderProps({
@@ -319,7 +319,6 @@ describe(__filename, () => {
   });
 
   it('renders NotFound page for unauthorized add-on - 401 error', () => {
-    const id = 'error-handler-id';
     const { store } = dispatchClientMetadata();
 
     const error = createApiError({
@@ -327,19 +326,16 @@ describe(__filename, () => {
       apiURL: 'https://some/api/endpoint',
       jsonResponse: { message: 'Authentication credentials were not provided.' },
     });
-    store.dispatch(setError({ id, error }));
-    const capturedError = store.getState().errors[id];
-    // This makes sure the error was dispatched to state correctly.
-    expect(capturedError).toBeTruthy();
+    const errorHandler = new ErrorHandler({
+      id: 'some-id', dispatch: store.dispatch,
+    });
+    errorHandler.handle(error);
 
-    const errorHandler = createStubErrorHandler(capturedError);
-
-    const root = shallowRender({ errorHandler });
+    const root = renderComponent({ errorHandler, store });
     expect(root.find(NotFound)).toHaveLength(1);
   });
 
   it('renders NotFound page for forbidden add-on - 403 error', () => {
-    const id = 'error-handler-id';
     const { store } = dispatchClientMetadata();
 
     const error = createApiError({
@@ -347,15 +343,31 @@ describe(__filename, () => {
       apiURL: 'https://some/api/endpoint',
       jsonResponse: { message: 'You do not have permission.' },
     });
-    store.dispatch(setError({ id, error }));
-    const capturedError = store.getState().errors[id];
-    // This makes sure the error was dispatched to state correctly.
-    expect(capturedError).toBeTruthy();
+    const errorHandler = new ErrorHandler({
+      id: 'some-id', dispatch: store.dispatch,
+    });
+    errorHandler.handle(error);
 
-    const errorHandler = createStubErrorHandler(capturedError);
-
-    const root = shallowRender({ errorHandler });
+    const root = renderComponent({ errorHandler, store });
     expect(root.find(NotFound)).toHaveLength(1);
+  });
+
+  it('renders NotFound with a custom error code', () => {
+    const errorCode = 'CUSTOM_ERROR_CODE';
+    const { store } = dispatchClientMetadata();
+
+    const error = createApiError({
+      response: { status: 403 },
+      apiURL: 'https://some/api/endpoint',
+      jsonResponse: { code: errorCode, message: 'Some error' },
+    });
+    const errorHandler = new ErrorHandler({
+      id: 'some-id', dispatch: store.dispatch,
+    });
+    errorHandler.handle(error);
+
+    const root = renderComponent({ errorHandler, store });
+    expect(root.find(NotFound)).toHaveProp('errorCode', errorCode);
   });
 
   it('renders a single author', () => {
@@ -404,6 +416,25 @@ describe(__filename, () => {
     expect(root.find('.Addon-title').render().find('a')).toHaveLength(0);
   });
 
+  it('dispatches a server redirect when slug is a numeric ID', () => {
+    const clientApp = CLIENT_APP_FIREFOX;
+    const { store } = dispatchClientMetadata({ clientApp });
+    const addon = createInternalAddon(fakeAddon);
+    store.dispatch(_loadAddons({ addon }));
+
+    const fakeDispatch = sinon.spy(store, 'dispatch');
+    renderComponent({
+      // We set the numeric `id` as slug.
+      params: { slug: addon.id }, store,
+    });
+
+    sinon.assert.calledWith(fakeDispatch, sendServerRedirect({
+      status: 301,
+      url: `/en-US/${clientApp}/addon/${addon.slug}/`,
+    }));
+    sinon.assert.callCount(fakeDispatch, 1);
+  });
+
   it('sanitizes a title', () => {
     const root = shallowRender({
       addon: createInternalAddon({
@@ -429,6 +460,18 @@ describe(__filename, () => {
     expect(root.find('.Addon-summary script')).toHaveLength(0);
     // Make sure the script has been removed.
     expect(root.find('.Addon-summary').html()).not.toContain('<script>');
+  });
+
+  it('adds <br> tags for newlines in a summary', () => {
+    const summaryWithNewlines = 'Hello\nI am an add-on.';
+    const root = shallowRender({
+      addon: createInternalAddon({
+        ...fakeAddon,
+        summary: summaryWithNewlines,
+      }),
+    });
+
+    expect(root.find('.Addon-summary').render().find('br')).toHaveLength(1);
   });
 
   it('sanitizes bad description HTML', () => {
@@ -1186,85 +1229,6 @@ describe(__filename, () => {
       expect(root).toHaveClassName('.Addon--has-more-than-0-addons');
       expect(root).toHaveClassName('.Addon--has-more-than-3-addons');
     });
-  });
-
-  it('displays a badge when the addon is featured', () => {
-    const addon = createInternalAddon({ ...fakeAddon, is_featured: true });
-    const root = shallowRender({ addon });
-
-    expect(root.find(Badge)).toHaveProp('type', 'featured');
-    expect(root.find(Badge)).toHaveProp('label', 'Featured Extension');
-  });
-
-  it('adds a different badge label when a "theme" addon is featured', () => {
-    const addon = createInternalAddon({
-      ...fakeAddon, is_featured: true, type: ADDON_TYPE_THEME,
-    });
-    const root = shallowRender({ addon });
-
-    expect(root.find(Badge)).toHaveProp('type', 'featured');
-    expect(root.find(Badge)).toHaveProp('label', 'Featured Theme');
-  });
-
-  it('adds a different badge label when an addon of a different type is featured', () => {
-    const addon = createInternalAddon({
-      ...fakeAddon, is_featured: true, type: ADDON_TYPE_OPENSEARCH,
-    });
-    const root = shallowRender({ addon });
-
-    expect(root.find(Badge)).toHaveProp('type', 'featured');
-    expect(root.find(Badge)).toHaveProp('label', 'Featured Add-on');
-  });
-
-  it('does not display the featured badge when addon is not featured', () => {
-    const addon = createInternalAddon({ ...fakeAddon, is_featured: false });
-    const root = shallowRender({ addon });
-
-    expect(root.find(Badge)).toHaveLength(0);
-  });
-
-  it('displays a badge when the addon needs restart', () => {
-    const addon = createInternalAddon(createFakeAddon({
-      files: [{ is_restart_required: true }],
-    }));
-    const root = shallowRender({ addon });
-
-    expect(root.find(Badge)).toHaveProp('type', 'restart-required');
-    expect(root.find(Badge)).toHaveProp('label', 'Restart Required');
-  });
-
-  it('does not display the "restart required" badge when addon does not need restart', () => {
-    const addon = createInternalAddon(createFakeAddon({
-      files: [{ is_restart_required: false }],
-    }));
-    const root = shallowRender({ addon });
-
-    expect(root.find(Badge)).toHaveLength(0);
-  });
-
-  it('does not display the "restart required" badge when isRestartRequired is not true', () => {
-    const root = shallowRender({ addon: createInternalAddon(fakeAddon) });
-
-    expect(root.find(Badge)).toHaveLength(0);
-  });
-
-  it('displays a badge when the addon is experimental', () => {
-    const addon = createInternalAddon(createFakeAddon({
-      is_experimental: true,
-    }));
-    const root = shallowRender({ addon });
-
-    expect(root.find(Badge)).toHaveProp('type', 'experimental');
-    expect(root.find(Badge)).toHaveProp('label', 'Experimental');
-  });
-
-  it('does not display a badge when the addon is not experimental', () => {
-    const addon = createInternalAddon(createFakeAddon({
-      is_experimental: false,
-    }));
-    const root = shallowRender({ addon });
-
-    expect(root.find(Badge)).toHaveLength(0);
   });
 
   it('renders the site identifier as a data attribute', () => {

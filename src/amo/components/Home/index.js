@@ -161,23 +161,27 @@ export class HomeBase extends React.Component {
       upAndComingExtensions,
     } = this.props;
 
+    // translators: The ending ellipsis alludes to a row of icons for each type
+    // of extension.
+    const extensionsHeader = i18n.gettext(`Customize the way Firefox works with
+      extensions. Are you interested in…`);
+    const themesHeader = i18n.gettext(`Change the way Firefox looks with
+      themes.`);
+
     return (
       <div className="Home">
         {errorHandler.renderErrorIfPresent()}
 
         <HomeHeroBanner />
 
-        <Card className="Home-SubjectShelf Home-CuratedCollections">
+        <Card
+          className="Home-SubjectShelf Home-CuratedCollections"
+          header={extensionsHeader}
+        >
           <div className="Home-SubjectShelf-text-wrapper">
             <h2 className="Home-SubjectShelf-subheading">
-              {i18n.gettext('Extensions change how Firefox works')}
+              {extensionsHeader}
             </h2>
-            <p className="Home-SubjectShelf-description">
-              {/* translators: The ending ellipsis alludes to a row of icons
-              for each type of extension */}
-              {i18n.gettext(`Customize the way Firefox works with extensions.
-                Are you interested in…`)}
-            </p>
           </div>
 
           {this.renderCuratedCollections()}
@@ -187,7 +191,7 @@ export class HomeBase extends React.Component {
           addons={popularExtensions}
           className="Home-PopularExtensions"
           header={i18n.gettext('Most Popular Extensions')}
-          footerText={i18n.gettext('See more')}
+          footerText={i18n.gettext('See more popular extensions')}
           footerLink={{
             pathname: '/search/',
             query: {
@@ -202,7 +206,7 @@ export class HomeBase extends React.Component {
           addons={featuredCollection}
           className="Home-FeaturedCollection"
           header={i18n.gettext('Change up your tabs')}
-          footerText={i18n.gettext('See more')}
+          footerText={i18n.gettext('See more tab extensions')}
           footerLink={{ pathname:
             `/collections/${FEATURED_COLLECTION_USER}/${FEATURED_COLLECTION_SLUG}/`,
           }}
@@ -213,7 +217,7 @@ export class HomeBase extends React.Component {
           addons={upAndComingExtensions}
           className="Home-UpAndComingExtensions"
           header={i18n.gettext('Up & Coming Extensions')}
-          footerText={i18n.gettext('See more')}
+          footerText={i18n.gettext('See more up & coming extensions')}
           footerLink={{
             pathname: '/search/',
             query: {
@@ -224,14 +228,14 @@ export class HomeBase extends React.Component {
           loading={resultsLoaded === false}
         />
 
-        <Card className="Home-SubjectShelf Home-CuratedThemes">
+        <Card
+          className="Home-SubjectShelf Home-CuratedThemes"
+          header={themesHeader}
+        >
           <div className="Home-SubjectShelf-text-wrapper">
             <h2 className="Home-SubjectShelf-subheading">
-              {i18n.gettext('Themes change how Firefox looks')}
+              {themesHeader}
             </h2>
-            <p className="Home-SubjectShelf-description">
-              {i18n.gettext(`Change the way Firefox looks with themes.`)}
-            </p>
           </div>
 
           {this.renderCuratedThemes()}
@@ -241,7 +245,7 @@ export class HomeBase extends React.Component {
           addons={featuredThemes}
           className="Home-FeaturedThemes"
           header={i18n.gettext('Featured themes')}
-          footerText={i18n.gettext('See more')}
+          footerText={i18n.gettext('See more featured themes')}
           footerLink={{
             pathname: '/search/',
             query: {

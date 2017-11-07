@@ -1,8 +1,15 @@
 import { logOutUser } from 'core/actions';
+import {
+  ADMIN_SUPER_POWERS,
+  ADMIN_TOOLS_VIEW,
+  STATS_VIEW,
+  THEMES_REVIEW,
+} from 'core/constants';
 import reducer, {
   isAuthenticated,
   loadUserProfile,
   selectDisplayName,
+  hasPermission,
 } from 'core/reducers/user';
 import { createUserProfileResponse } from 'tests/unit/helpers';
 import {
@@ -14,10 +21,11 @@ import {
 describe(__filename, () => {
   describe('reducer', () => {
     it('initializes properly', () => {
-      const { displayName, id, username } = reducer(undefined);
+      const { displayName, id, username, permissions } = reducer(undefined);
       expect(id).toEqual(null);
       expect(username).toEqual(null);
       expect(displayName).toEqual(null);
+      expect(permissions).toEqual(null);
     });
 
     it('ignores unrelated actions', () => {
@@ -29,11 +37,16 @@ describe(__filename, () => {
     });
 
     it('handles LOAD_USER_PROFILE', () => {
-      const { id, username } = reducer(undefined, loadUserProfile({
-        profile: createUserProfileResponse({ id: 1234, username: 'user-test' }),
+      const { id, username, permissions } = reducer(undefined, loadUserProfile({
+        profile: createUserProfileResponse({
+          id: 1234,
+          username: 'user-test',
+          permissions: [ADMIN_TOOLS_VIEW],
+        }),
       }));
       expect(id).toEqual(1234);
       expect(username).toEqual('user-test');
+      expect(permissions).toEqual([ADMIN_TOOLS_VIEW]);
     });
 
     it('throws an error when no profile is passed to LOAD_USER_PROFILE', () => {
@@ -46,10 +59,17 @@ describe(__filename, () => {
       const state = reducer(undefined, loadUserProfile({
         profile: createUserProfileResponse({ id: 12345, username: 'john' }),
       }));
-      const { displayName, id, username } = reducer(state, logOutUser());
+      const {
+        displayName,
+        id,
+        username,
+        permissions,
+      } = reducer(state, logOutUser());
+
       expect(id).toEqual(null);
       expect(username).toEqual(null);
       expect(displayName).toEqual(null);
+      expect(permissions).toEqual(null);
     });
   });
 
@@ -104,6 +124,42 @@ describe(__filename, () => {
       const { state } = dispatchSignInActions({ username });
 
       expect(selectDisplayName(state)).toEqual(username);
+    });
+  });
+
+  describe('hasPermission selector', () => {
+    it('returns `true` when user has the given permission', () => {
+      const permissions = [ADMIN_TOOLS_VIEW, STATS_VIEW];
+      const { state } = dispatchSignInActions({ permissions });
+
+      expect(hasPermission(state, STATS_VIEW)).toEqual(true);
+    });
+
+    it('returns `false` when user does not have the given permission', () => {
+      const permissions = [ADMIN_TOOLS_VIEW, STATS_VIEW];
+      const { state } = dispatchSignInActions({ permissions });
+
+      expect(hasPermission(state, THEMES_REVIEW)).toEqual(false);
+    });
+
+    it('returns `false` when user state has no permissions', () => {
+      const { state } = dispatchSignInActions({ permissions: null });
+
+      expect(hasPermission(state, THEMES_REVIEW)).toEqual(false);
+    });
+
+    it('returns `false` when user is not logged in', () => {
+      const { state } = dispatchClientMetadata();
+
+      expect(hasPermission(state, THEMES_REVIEW)).toEqual(false);
+    });
+
+    it('returns `true` when user is admin', () => {
+      const permissions = [ADMIN_SUPER_POWERS];
+      const { state } = dispatchSignInActions({ permissions });
+
+
+      expect(hasPermission(state, THEMES_REVIEW)).toEqual(true);
     });
   });
 });

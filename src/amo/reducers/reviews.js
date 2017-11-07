@@ -2,6 +2,7 @@
 import { oneLine } from 'common-tags';
 
 import {
+  CLEAR_ADDON_REVIEWS,
   SEND_REPLY_TO_REVIEW,
   SEND_REVIEW_FLAG,
   SET_ADDON_REVIEWS,
@@ -15,8 +16,11 @@ import {
 } from 'amo/constants';
 import { denormalizeReview } from 'amo/actions/reviews';
 import type {
+  ClearAddonReviewsAction,
+  FlagReviewAction,
   HideEditReviewFormAction,
   HideReplyToReviewFormAction,
+  ReviewWasFlaggedAction,
   SendReplyToReviewAction,
   SetAddonReviewsAction,
   SetReviewAction,
@@ -25,6 +29,8 @@ import type {
   ShowReplyToReviewFormAction,
   UserReviewType,
 } from 'amo/actions/reviews';
+import type { FlagReviewReasonType } from 'amo/constants';
+
 
 type ReviewsById = {
   [id: number]: UserReviewType,
@@ -38,15 +44,14 @@ type ReviewsByAddon = {
 }
 
 export type FlagState = {
+  reason: FlagReviewReasonType,
   inProgress: boolean,
   wasFlagged: boolean,
 };
 
 type ViewStateByReviewId = {|
   editingReview: boolean,
-  flags: {
-    [reason: string]: FlagState,
-  },
+  flag: FlagState,
   replyingToReview: boolean,
   submittingReply: boolean,
 |};
@@ -146,39 +151,31 @@ export const changeViewState = (
   { state, reviewId, stateChange }: ChangeViewStateParams = {}
 ): $Shape<ReviewState> => {
   const change = { ...stateChange };
-  const newFlags = change.flags;
-  // Make sure the shallow spread doesn't override old objects.
-  delete change.flags;
 
-  const newState = {
+  const existingFlag = state.view[reviewId] ?
+    state.view[reviewId].flag : {};
+
+  return {
     ...state,
     view: {
       ...state.view,
       [reviewId]: {
         editingReview: false,
-        flags: {},
         replyingToReview: false,
         submittingReply: false,
         ...state.view[reviewId],
         ...change,
+        flag: {
+          ...existingFlag,
+          ...change.flag,
+        },
       },
     },
   };
-
-  if (newFlags) {
-    Object.keys(newFlags).forEach((key) => {
-      const newValue = newFlags[key];
-      newState.view[reviewId].flags[key] = {
-        ...newState.view[reviewId].flags[key],
-        ...newValue,
-      };
-    });
-  }
-
-  return newState;
 };
 
 type ReviewActionType =
+  | ClearAddonReviewsAction
   | HideEditReviewFormAction
   | HideReplyToReviewFormAction
   | SendReplyToReviewAction
@@ -186,7 +183,9 @@ type ReviewActionType =
   | SetReviewAction
   | SetReviewReplyAction
   | ShowEditReviewFormAction
-  | ShowReplyToReviewFormAction;
+  | ShowReplyToReviewFormAction
+  | FlagReviewAction
+  | ReviewWasFlaggedAction;
 
 export default function reviewsReducer(
   state: ReviewState = initialState,
@@ -268,11 +267,10 @@ export default function reviewsReducer(
         state,
         reviewId: payload.reviewId,
         stateChange: {
-          flags: {
-            [payload.reason]: {
-              inProgress: true,
-              wasFlagged: false,
-            },
+          flag: {
+            reason: payload.reason,
+            inProgress: true,
+            wasFlagged: false,
           },
         },
       });
@@ -283,14 +281,19 @@ export default function reviewsReducer(
         state,
         reviewId: payload.reviewId,
         stateChange: {
-          flags: {
-            [payload.reason]: {
-              inProgress: false,
-              wasFlagged: true,
-            },
+          flag: {
+            reason: payload.reason,
+            inProgress: false,
+            wasFlagged: true,
           },
         },
       });
+    }
+    case CLEAR_ADDON_REVIEWS: {
+      const { payload } = action;
+      const newState = { ...state };
+      delete newState.byAddon[payload.addonSlug];
+      return newState;
     }
     case SET_ADDON_REVIEWS: {
       const { payload } = action;

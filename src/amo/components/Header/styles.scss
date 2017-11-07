@@ -17,7 +17,7 @@
     padding: 0 $header-footer-gutter 10px;
   }
 
-  @include respond-to(extraExtraLarge) {
+  @include respond-to(extraLarge) {
     grid-template-columns: max-content 1fr 1fr;
     grid-template-rows: 46px auto;
     margin: 0 auto;
@@ -45,7 +45,7 @@
     margin: 48px 0 0;
   }
 
-  @include respond-to(extraExtraLarge) {
+  @include respond-to(extraLarge) {
     @include margin-end(24px);
 
     align-self: center;
@@ -55,24 +55,7 @@
   }
 }
 
-.Header-addons-icon {
-  @include margin-end(14px);
-
-  height: 32px;
-  vertical-align: bottom;
-  width: 32px;
-
-  @include respond-to(medium) {
-    vertical-align: middle;
-  }
-
-  @include respond-to(extraExtraLarge) {
-    vertical-align: bottom;
-  }
-}
-
 .Header-title-wrapper {
-  font-size: $font-size-l;
   margin: 0;
 }
 
@@ -80,14 +63,26 @@
   &,
   &:link {
     color: $white;
-    font-size: $font-size-l;
-    font-weight: 300;
-    margin: 0;
-    text-decoration: none;
+  }
 
-    @include respond-to(extraExtraLarge) {
-      font-size: $font-size-header-title;
-    }
+  background-image: url("./styles/firefox-addons-min.svg");
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  background-size: 225px 48px;
+  display: block;
+  height: 48px;
+  margin: 0;
+  width: 100%;
+
+  @include respond-to(medium) {
+    background-position: left bottom;
+    width: 225px;
+  }
+
+  @include respond-to(extraExtraLarge) {
+    background-size: 300px 64px;
+    height: 64px;
+    width: 300px;
   }
 }
 
@@ -103,7 +98,7 @@
     grid-row: 1 / 2;
   }
 
-  @include respond-to(extraExtraLarge) {
+  @include respond-to(extraLarge) {
     grid-column: 2 / -1;
     grid-row: 1 / 2;
   }
@@ -163,10 +158,9 @@
     align-self: end;
     grid-column: 1 / 3;
     grid-row: 2 / 2;
-    margin: 0;
   }
 
-  @include respond-to(extraExtraLarge) {
+  @include respond-to(extraLarge) {
     @include margin-end(12px);
 
     align-self: center;
@@ -192,6 +186,7 @@
 
   @include respond-to(extraLarge) {
     align-self: center;
+    margin: 0;
     max-width: 284px;
     width: 100%;
   }

@@ -26,15 +26,9 @@ import {
 } from 'core/utils';
 import translate from 'core/i18n/translate';
 import Button from 'ui/components/Button';
-import Icon from 'ui/components/Icon/index';
 
 import './styles.scss';
 
-
-const ICON_MAP = {
-  [ADDON_TYPE_EXTENSION]: 'multitasking-octopus',
-  [ADDON_TYPE_THEME]: 'artistic-unicorn',
-};
 
 export class LandingPageBase extends React.Component {
   static propTypes = {
@@ -132,13 +126,13 @@ export class LandingPageBase extends React.Component {
             featured: true,
           },
         },
-        featuredFooterText: i18n.gettext('See more'),
+        featuredFooterText: i18n.gettext('See more featured extensions'),
         trendingHeader: i18n.gettext('Trending extensions'),
         trendingFooterLink: {
           pathname: '/search/',
           query: { addonType: ADDON_TYPE_EXTENSION, sort: SEARCH_SORT_TRENDING },
         },
-        trendingFooterText: i18n.gettext('See more'),
+        trendingFooterText: i18n.gettext('See more trending extensions'),
         highlyRatedHeader: i18n.gettext('Top rated extensions'),
         highlyRatedFooterLink: {
           pathname: '/search/',
@@ -147,7 +141,7 @@ export class LandingPageBase extends React.Component {
             sort: SEARCH_SORT_TOP_RATED,
           },
         },
-        highlyRatedFooterText: i18n.gettext('See more'),
+        highlyRatedFooterText: i18n.gettext('See more top rated extensions'),
       },
       [ADDON_TYPE_THEME]: {
         featuredHeader: i18n.gettext('Featured themes'),
@@ -158,35 +152,23 @@ export class LandingPageBase extends React.Component {
             featured: true,
           },
         },
-        featuredFooterText: i18n.gettext('See more'),
+        featuredFooterText: i18n.gettext('See more featured themes'),
         trendingHeader: i18n.gettext('Trending themes'),
         trendingFooterLink: {
           pathname: '/search/',
           query: { addonType: ADDON_TYPE_THEME, sort: SEARCH_SORT_TRENDING },
         },
-        trendingFooterText: i18n.gettext('See more'),
+        trendingFooterText: i18n.gettext('See more trending themes'),
         highlyRatedHeader: i18n.gettext('Top rated themes'),
         highlyRatedFooterLink: {
           pathname: '/search/',
           query: { addonType: ADDON_TYPE_THEME, sort: SEARCH_SORT_TOP_RATED },
         },
-        highlyRatedFooterText: i18n.gettext('See more'),
+        highlyRatedFooterText: i18n.gettext('See more top rated themes'),
       },
     };
 
     return { addonType, html: contentForTypes[addonType] };
-  }
-
-  icon(addonType) {
-    return (
-      <Icon
-        className={classNames(
-          'LandingPage-icon',
-          `LandingPage-icon--${addonType}`,
-        )}
-        name={ICON_MAP[addonType]}
-      />
-    );
   }
 
   render() {
@@ -227,15 +209,12 @@ export class LandingPageBase extends React.Component {
         {errorHandler.renderErrorIfPresent()}
 
         <div className="LandingPage-header">
-          <div className="LandingPage-header-text">
-            <h1 className="LandingPage-addonType-name">
-              {headingText[addonType]}
-            </h1>
-            <p className="LandingPage-heading-content">
-              {contentText[addonType]}
-            </p>
-          </div>
-          {this.icon(addonType)}
+          <h1 className="LandingPage-addonType-name">
+            {headingText[addonType]}
+          </h1>
+          <p className="LandingPage-heading-content">
+            {contentText[addonType]}
+          </p>
         </div>
 
         <Categories addonType={addonType} />

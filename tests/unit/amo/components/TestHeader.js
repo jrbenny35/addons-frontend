@@ -42,7 +42,7 @@ describe(__filename, () => {
 
     expect(root.find('.Header-title-wrapper')).toHaveTagName('h1');
     expect(root.find('.Header-title').type()).toEqual(Link);
-    expect(root.find('.Header-title').prop('children'))
+    expect(root.find('.Header-title .visually-hidden').childAt(0))
       .toContain('Firefox Add-ons');
   });
 
@@ -53,7 +53,7 @@ describe(__filename, () => {
     // homepage; other routes will render their own, more relevant, H1 tags.
     expect(root.find('h1')).toHaveLength(0);
     expect(root.find('.Header-title').type()).toEqual(Link);
-    expect(root.find('.Header-title').prop('children'))
+    expect(root.find('.Header-title .visually-hidden').childAt(0))
       .toContain('Firefox Add-ons');
   });
 
@@ -79,6 +79,15 @@ describe(__filename, () => {
 
     expect(wrapper.find(DropdownMenu)).toHaveLength(1);
     expect(wrapper.find(DropdownMenu)).toHaveProp('text', 'babar');
+  });
+
+  it("displays user's collection when user is signed in", () => {
+    const { store } = dispatchSignInActions({ username: 'babar' });
+    const wrapper = renderHeader({ store });
+    const link = wrapper.find('.Header-user-menu-collections-link');
+
+    expect(link).toHaveLength(1);
+    expect(link.prop('children')).toEqual('View My Collections');
   });
 
   it('allows a signed-in user to log out', () => {

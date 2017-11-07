@@ -2,6 +2,9 @@ import { oneLine } from 'common-tags';
 import UAParser from 'ua-parser-js';
 
 import {
+  ADDON_TYPE_DICT,
+  ADDON_TYPE_EXTENSION,
+  ADDON_TYPE_LANG,
   ADDON_TYPE_OPENSEARCH,
   ADDON_TYPE_THEME,
   CLIENT_APP_ANDROID,
@@ -20,8 +23,9 @@ import {
   getClientCompatibility,
   isCompatibleWithUserAgent,
 } from 'core/utils/compatibility';
-import { fakeAddon } from 'tests/unit/amo/helpers';
+import { fakeAddon, fakeTheme } from 'tests/unit/amo/helpers';
 import {
+  createFakeMozWindow,
   userAgents,
   userAgentsByPlatform,
 } from 'tests/unit/helpers';
@@ -148,7 +152,7 @@ describe(__filename, () => {
       const fakeOpenSearchAddon = createInternalAddon({
         ...fakeAddon, type: ADDON_TYPE_OPENSEARCH,
       });
-      const fakeWindow = { external: { AddSearchProvider: sinon.stub() } };
+      const fakeWindow = createFakeMozWindow();
 
       expect(isCompatibleWithUserAgent({
         _window: fakeWindow, addon: fakeOpenSearchAddon, userAgentInfo }))
@@ -374,8 +378,8 @@ describe(__filename, () => {
       expect(minVersion).toEqual(null);
     });
 
-    it('should log info when OpenSearch type is found', () => {
-      const fakeLog = { info: sinon.stub() };
+    it('should not log an error when OpenSearch type is found', () => {
+      const fakeLog = { error: sinon.stub() };
       const openSearchAddon = createInternalAddon({
         ...fakeAddon,
         current_version: {
@@ -384,32 +388,151 @@ describe(__filename, () => {
         },
         type: ADDON_TYPE_OPENSEARCH,
       });
-      const { maxVersion, minVersion } = getCompatibleVersions({
+
+      getCompatibleVersions({
         _log: fakeLog,
         addon: openSearchAddon,
         clientApp: CLIENT_APP_FIREFOX,
       });
 
-      expect(maxVersion).toEqual(null);
-      expect(minVersion).toEqual(null);
-      expect(fakeLog.info.firstCall.args[0])
-        .toContain(`addon is type ${ADDON_TYPE_OPENSEARCH}`);
+      sinon.assert.notCalled(fakeLog.error);
+    });
+
+    it('marks clientApp as unsupported without extension compatibility', () => {
+      const addon = createInternalAddon({
+        ...fakeAddon,
+        current_version: {
+          ...fakeAddon.current_version,
+          // This add-on is not compatible with any client apps.
+          compatibility: {},
+        },
+        type: ADDON_TYPE_EXTENSION,
+      });
+      const { supportsClientApp } = getCompatibleVersions({
+        addon, clientApp: CLIENT_APP_FIREFOX,
+      });
+
+      expect(supportsClientApp).toEqual(false);
+    });
+
+    it('marks clientApp as unsupported without lang pack compatibility', () => {
+      const addon = createInternalAddon({
+        ...fakeAddon,
+        current_version: {
+          ...fakeAddon.current_version,
+          // This add-on is not compatible with any client apps.
+          compatibility: {},
+        },
+        type: ADDON_TYPE_LANG,
+      });
+      const { supportsClientApp } = getCompatibleVersions({
+        addon, clientApp: CLIENT_APP_FIREFOX,
+      });
+
+      expect(supportsClientApp).toEqual(false);
+    });
+
+    it('marks clientApp as supported with compatibility', () => {
+      const clientApp = CLIENT_APP_ANDROID;
+      const addon = createInternalAddon({
+        ...fakeAddon,
+        current_version: {
+          ...fakeAddon.current_version,
+          compatibility: {
+            [clientApp]: {
+              min: '48.0',
+              max: '*',
+            },
+          },
+        },
+        type: ADDON_TYPE_EXTENSION,
+      });
+      const { supportsClientApp } = getCompatibleVersions({
+        addon, clientApp,
+      });
+
+      expect(supportsClientApp).toEqual(true);
+    });
+
+    it('always marks clientApp as supported for opensearch add-ons', () => {
+      const addon = createInternalAddon({
+        ...fakeAddon,
+        current_version: {
+          ...fakeAddon.current_version,
+          // Search providers do not declare clientApp compatibility.
+          compatibility: {},
+        },
+        type: ADDON_TYPE_OPENSEARCH,
+      });
+      const { supportsClientApp } = getCompatibleVersions({
+        addon, clientApp: CLIENT_APP_ANDROID,
+      });
+
+      expect(supportsClientApp).toEqual(true);
+    });
+
+    it('always marks clientApp as supported for themes', () => {
+      const addon = createInternalAddon({
+        ...fakeTheme,
+        current_version: {
+          ...fakeTheme.current_version,
+          // Themes do not declare clientApp compatibility.
+          compatibility: {},
+        },
+      });
+      const { supportsClientApp } = getCompatibleVersions({
+        addon, clientApp: CLIENT_APP_ANDROID,
+      });
+
+      expect(supportsClientApp).toEqual(true);
+    });
+
+    it('always marks clientApp as supported for dictionaries', () => {
+      const addon = createInternalAddon({
+        ...fakeAddon,
+        current_version: {
+          ...fakeAddon.current_version,
+          // Dictionaries do not declare clientApp compatibility.
+          compatibility: {},
+        },
+        type: ADDON_TYPE_DICT,
+      });
+      const { supportsClientApp } = getCompatibleVersions({
+        addon, clientApp: CLIENT_APP_ANDROID,
+      });
+
+      expect(supportsClientApp).toEqual(true);
     });
   });
 
   describe('getClientCompatibility', () => {
     it('returns true for Firefox (reason undefined when compatibile)', () => {
-      const { browser, os } = UAParser(userAgents.firefox[0]);
+      const {
+        browser, os,
+      } = UAParser(userAgentsByPlatform.mac.firefox57);
       const userAgentInfo = { browser, os };
+      const clientApp = CLIENT_APP_FIREFOX;
+      const addon = createInternalAddon({
+        ...fakeAddon,
+        current_version: {
+          ...fakeAddon.current_version,
+          compatibility: {
+            [clientApp]: {
+              min: '48.0',
+              max: '*',
+            },
+          },
+        },
+      });
 
       expect(getClientCompatibility({
-        addon: createInternalAddon(fakeAddon),
-        clientApp: CLIENT_APP_FIREFOX,
+        addon,
+        clientApp,
         userAgentInfo,
       })).toEqual({
         compatible: true,
-        maxVersion: null,
-        minVersion: null,
+        maxVersion: addon.current_version.compatibility[clientApp].max,
+        minVersion: addon.current_version.compatibility[clientApp].min,
         reason: null,
       });
     });
@@ -463,18 +586,31 @@ describe(__filename, () => {
     });
 
     it('returns incompatible for non-Firefox UA', () => {
-      const { browser, os } = UAParser(userAgents.firefox[0]);
+      const { browser, os } = UAParser(userAgentsByPlatform.mac.chrome41);
       const userAgentInfo = { browser, os };
+      const clientApp = CLIENT_APP_FIREFOX;
+      const addon = createInternalAddon({
+        ...fakeAddon,
+        current_version: {
+          ...fakeAddon.current_version,
+          compatibility: {
+            [clientApp]: {
+              min: '*',
+              max: '57.0',
+            },
+          },
+        },
+      });
 
       expect(getClientCompatibility({
-        addon: createInternalAddon(fakeAddon),
-        clientApp: CLIENT_APP_FIREFOX,
+        addon,
+        clientApp,
         userAgentInfo,
       })).toEqual({
-        compatible: true,
-        maxVersion: null,
-        minVersion: null,
-        reason: null,
+        compatible: false,
+        maxVersion: addon.current_version.compatibility[clientApp].max,
+        minVersion: addon.current_version.compatibility[clientApp].min,
+        reason: INCOMPATIBLE_NOT_FIREFOX,
       });
     });
 
@@ -534,6 +670,60 @@ describe(__filename, () => {
       })).toMatchObject({
         compatible: false,
         reason: INCOMPATIBLE_OVER_MAX_VERSION,
+      });
+    });
+
+    it('returns incompatible when add-on does not support client app', () => {
+      const {
+        browser, os,
+      } = UAParser(userAgentsByPlatform.mac.firefox57);
+      const userAgentInfo = { browser, os };
+      const addon = createInternalAddon({
+        ...fakeAddon,
+        current_version: {
+          ...fakeAddon.current_version,
+          // The clientApp is not supported:
+          compatibility: {},
+        },
+      });
+
+      expect(getClientCompatibility({
+        addon,
+        clientApp: CLIENT_APP_FIREFOX,
+        userAgentInfo,
+      })).toEqual({
+        compatible: false,
+        maxVersion: null,
+        minVersion: null,
+        reason: INCOMPATIBLE_UNSUPPORTED_PLATFORM,
+      });
+    });
+
+    it('returns compatible for opensearch add-ons', () => {
+      const {
+        browser, os,
+      } = UAParser(userAgentsByPlatform.mac.firefox57);
+      const userAgentInfo = { browser, os };
+      const addon = createInternalAddon({
+        ...fakeAddon,
+        type: ADDON_TYPE_OPENSEARCH,
+        current_version: {
+          ...fakeAddon.current_version,
+          // These add-ons do not define clientApp support:
+          compatibility: {},
+        },
+      });
+
+      expect(getClientCompatibility({
+        addon,
+        clientApp: CLIENT_APP_FIREFOX,
+        userAgentInfo,
+        _window: createFakeMozWindow(),
+      })).toEqual({
+        compatible: true,
+        maxVersion: null,
+        minVersion: null,
+        reason: null,
       });
     });
   });

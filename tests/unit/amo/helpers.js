@@ -39,7 +39,16 @@ export const fakeAddon = Object.freeze({
   categories: { firefox: ['other'] },
   current_beta_version: null,
   current_version: {
-    compatibility: {},
+    compatibility: {
+      [CLIENT_APP_ANDROID]: {
+        min: '48.0',
+        max: '*',
+      },
+      [CLIENT_APP_FIREFOX]: {
+        min: '48.0',
+        max: '*',
+      },
+    },
     id: 123,
     license: { name: 'tofulicense', url: 'http://license.com/' },
     version: '2.0.0',
@@ -104,6 +113,7 @@ export const fakeTheme = Object.freeze({
   }],
   current_version: {
     ...fakeAddon.current_version,
+    compatibility: {},
     version: '0',
   },
   description: 'This is the add-on description',
@@ -203,13 +213,19 @@ export function dispatchSignInActions({
   userId = 12345,
   username = 'user-1234',
   displayName = null,
+  permissions = [],
   ...otherArgs
 } = {}) {
   const { store } = dispatchClientMetadata(otherArgs);
 
   store.dispatch(setAuthToken(authToken));
   store.dispatch(loadUserProfile({
-    profile: createUserProfileResponse({ id: userId, username, displayName }),
+    profile: createUserProfileResponse({
+      id: userId,
+      username,
+      displayName,
+      permissions,
+    }),
   }));
 
   return {

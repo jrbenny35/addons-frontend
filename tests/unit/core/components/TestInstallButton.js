@@ -12,13 +12,16 @@ import {
   ADDON_TYPE_THEME,
   INCOMPATIBLE_NO_OPENSEARCH,
   INCOMPATIBLE_NOT_FIREFOX,
+  INSTALL_STARTED_CATEGORY,
   OS_ALL,
+  TRACKING_TYPE_EXTENSION,
   UNKNOWN,
 } from 'core/constants';
 import { createInternalAddon } from 'core/reducers/addons';
 import * as themePreview from 'core/themePreview';
 import {
   createFakeEvent,
+  createFakeMozWindow,
   fakeI18n,
   sampleUserAgentParsed,
   shallowUntilTarget,
@@ -34,6 +37,7 @@ describe(__filename, () => {
     compatible: false,
     reason: INCOMPATIBLE_NOT_FIREFOX,
   });
+
   const getClientCompatibilityFalseOpenSearch = () => ({
     compatible: false,
     reason: INCOMPATIBLE_NO_OPENSEARCH,
@@ -111,7 +115,7 @@ describe(__filename, () => {
     const button = root.childAt(1);
 
     expect(button.type()).toEqual(Button);
-    expect(button.children()).toIncludeText('Install Theme');
+    expect(button.children()).toContain('Install Theme');
     expect(button).toHaveProp(
       'data-browsertheme', JSON.stringify(themePreview.getThemeData(addon))
     );
@@ -151,7 +155,7 @@ describe(__filename, () => {
 
     expect(button.type()).toEqual(Button);
 
-    expect(button.children()).toIncludeText('Add to Firefox');
+    expect(button.children()).toContain('Add to Firefox');
     expect(button).toHaveClassName('InstallButton-button');
     expect(button).not.toHaveClassName('Button--small');
     expect(button).toHaveProp('href', installURL);
@@ -253,7 +257,7 @@ describe(__filename, () => {
     expect(button.type()).toEqual(Button);
     expect(button).toHaveClassName('Button--action');
     expect(button).toHaveClassName('InstallButton-button');
-    expect(button.children()).toIncludeText('Add to Firefox');
+    expect(button.children()).toContain('Add to Firefox');
   });
 
   it('renders a button for OpenSearch regardless of mozAddonManager', () => {
@@ -272,7 +276,7 @@ describe(__filename, () => {
     expect(button.type()).toEqual(Button);
     expect(button).toHaveClassName('Button--action');
     expect(button).toHaveClassName('InstallButton-button');
-    expect(button.children()).toIncludeText('Add to Firefox');
+    expect(button.children()).toContain('Add to Firefox');
   });
 
   it('disables the OpenSearch button if not compatible', () => {
@@ -289,12 +293,12 @@ describe(__filename, () => {
 
     expect(button.type()).toEqual(Button);
     expect(button).toHaveClassName('InstallButton-button--disabled');
-    expect(button.children()).toIncludeText('Add to Firefox');
+    expect(button.children()).toContain('Add to Firefox');
   });
 
   it('disables install switch and uses button for OpenSearch plugins', () => {
     const fakeLog = { info: sinon.stub() };
-    const fakeWindow = { external: { AddSearchProvider: sinon.stub() } };
+    const fakeWindow = createFakeMozWindow();
     const installURL = 'https://a.m.o/files/addon.xpi';
 
     const rootNode = render({
@@ -307,11 +311,54 @@ describe(__filename, () => {
     });
 
     const installButton = rootNode.find('.InstallButton-button');
-    expect(installButton.children().text()).toEqual('Add to Firefox');
+    expect(installButton.children()).toContain('Add to Firefox');
     installButton.simulate('click', createFakeEvent());
 
     sinon.assert.calledWith(fakeLog.info, 'Adding OpenSearch Provider');
     sinon.assert.calledWith(
       fakeWindow.external.AddSearchProvider, installURL);
+  });
+
+  it('tracks install analytics when installing an extension', () => {
+    const _tracking = { sendEvent: sinon.stub() };
+    const addon = createInternalAddon(createFakeAddon({
+      name: 'some-extension',
+      files: [{ platform: OS_ALL, url: 'https://a.m.o/files/addon.xpi' }],
+      type: ADDON_TYPE_EXTENSION,
+    }));
+
+    const rootNode = render({ addon, useButton: true, _tracking });
+
+    const installButton = rootNode.find('.InstallButton-button');
+    installButton.simulate('click', createFakeEvent());
+
+    sinon.assert.calledWith(_tracking.sendEvent, {
+      action: TRACKING_TYPE_EXTENSION,
+      category: INSTALL_STARTED_CATEGORY,
+      label: addon.name,
+    });
+  });
+
+  it('tracks install analytics when installing a search provider', () => {
+    const _tracking = { sendEvent: sinon.stub() };
+    const _window = createFakeMozWindow();
+    const addon = createInternalAddon(createFakeAddon({
+      name: 'some-search-provider',
+      files: [{ platform: OS_ALL, url: 'https://a.m.o/files/addon.xpi' }],
+      type: ADDON_TYPE_OPENSEARCH,
+    }));
+
+    const rootNode = render({
+      addon, useButton: true, _tracking, _window,
+    });
+
+    const installButton = rootNode.find('.InstallButton-button');
+    installButton.simulate('click', createFakeEvent());
+
+    sinon.assert.calledWith(_tracking.sendEvent, {
+      action: TRACKING_TYPE_EXTENSION,
+      category: INSTALL_STARTED_CATEGORY,
+      label: addon.name,
+    });
   });
 });

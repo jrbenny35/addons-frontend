@@ -51,7 +51,10 @@ const enabledExtension = Promise.resolve({
 });
 
 export function getFakeAddonManagerWrapper({
-  getAddon = enabledExtension, permissionPromptsEnabled = true } = {}) {
+  getAddon = enabledExtension,
+  permissionPromptsEnabled = true,
+  ...overrides
+} = {}) {
   return {
     addChangeListeners: sinon.stub(),
     enable: sinon.stub().returns(Promise.resolve()),
@@ -59,6 +62,7 @@ export function getFakeAddonManagerWrapper({
     install: sinon.stub().returns(Promise.resolve()),
     uninstall: sinon.stub().returns(Promise.resolve()),
     hasPermissionPromptsEnabled: sinon.stub().returns(permissionPromptsEnabled),
+    ...overrides,
   };
 }
 
@@ -306,6 +310,12 @@ export function createFakeEvent(extraProps = {}) {
   };
 }
 
+export const createFakeMozWindow = () => {
+  // This is a special Mozilla window that allows you to
+  // install open search add-ons.
+  return { external: { AddSearchProvider: sinon.stub() } };
+};
+
 export function createStubErrorHandler(capturedError = null) {
   return new ErrorHandler({
     id: 'create-stub-error-handler-id',
@@ -373,6 +383,7 @@ export function createUserProfileResponse({
   id = 123456,
   username = 'user-1234',
   displayName = null,
+  permissions = [],
 } = {}) {
   return {
     average_addon_rating: null,
@@ -391,6 +402,7 @@ export function createUserProfileResponse({
     picture_url: `${config.get('amoCDN')}/static/img/zamboni/anon_user.png`,
     url: null,
     username,
+    permissions,
   };
 }
 

@@ -5,7 +5,9 @@ import { compose } from 'redux';
 
 import Link from 'amo/components/Link';
 import ReportAbuseButton from 'amo/components/ReportAbuseButton';
+import { STATS_VIEW } from 'core/constants';
 import translate from 'core/i18n/translate';
+import { hasPermission } from 'core/reducers/user';
 import type { AddonType } from 'core/types/addons';
 import {
   addonHasVersionHistory,
@@ -15,6 +17,7 @@ import {
 import Card from 'ui/components/Card';
 import LoadingText from 'ui/components/LoadingText';
 import type { I18nType } from 'core/types/i18n';
+import type { UserStateType } from 'core/reducers/user';
 
 import './styles.scss';
 
@@ -23,11 +26,16 @@ type Props = {|
   addon: AddonType | null,
   i18n: I18nType,
   userId: number | null,
+  hasStatsPermission: boolean,
 |};
+
+const renderNodesIf = (includeContent: boolean, nodes: Array<any>) => {
+  return includeContent ? nodes : null;
+};
 
 export class AddonMoreInfoBase extends React.Component<Props> {
   listContent() {
-    const { addon, i18n, userId } = this.props;
+    const { addon, i18n, userId, hasStatsPermission } = this.props;
 
     if (!addon) {
       return this.renderDefinitions({
@@ -54,17 +62,39 @@ export class AddonMoreInfoBase extends React.Component<Props> {
       );
     }
 
-    return this.renderDefinitions({
-      homepage,
-      supportUrl,
-      statsLink: addon && isAddonAuthor({ addon, userId }) ? (
+    let supportEmail = addon.support_email;
+    if (supportEmail && /.+@.+/.test(supportEmail)) {
+      supportEmail = (
+        <li>
+          <a
+            className="AddonMoreInfo-support-email"
+            href={`mailto:${supportEmail}`}
+          >
+            {i18n.gettext('Support Email')}
+          </a>
+        </li>
+      );
+    } else {
+      supportEmail = null;
+    }
+
+    let statsLink = null;
+    if (isAddonAuthor({ addon, userId }) || addon.public_stats || hasStatsPermission) {
+      statsLink = (
         <Link
           className="AddonMoreInfo-stats-link"
           href={`/addon/${addon.slug}/statistics/`}
         >
           {i18n.gettext('Visit stats dashboard')}
         </Link>
-      ) : null,
+      );
+    }
+
+    return this.renderDefinitions({
+      homepage,
+      supportUrl,
+      supportEmail,
+      statsLink,
       version: addonHasVersionHistory(addon) ?
         addon.current_version.version : null,
       versionLastUpdated: i18n.sprintf(
@@ -102,22 +132,26 @@ export class AddonMoreInfoBase extends React.Component<Props> {
         </Link>
       ) : null,
       versionHistoryLink: addonHasVersionHistory(addon) ? (
-        <Link
-          className="AddonMoreInfo-version-history-link"
-          href={`/addon/${addon.slug}/versions/`}
-        >
-          {i18n.gettext('See all versions')}
-        </Link>
+        <li>
+          <Link
+            className="AddonMoreInfo-version-history-link"
+            href={`/addon/${addon.slug}/versions/`}
+          >
+            {i18n.gettext('See all versions')}
+          </Link>
+        </li>
       ) : null,
       // Since current_beta_version is just an alias to the latest beta,
       // we can assume that no betas exist at all if it is null.
       betaVersionsLink: addon.current_beta_version ? (
-        <Link
-          className="AddonMoreInfo-beta-versions-link"
-          href={`/addon/${addon.slug}/versions/beta`}
-        >
-          {i18n.gettext('See all beta versions')}
-        </Link>
+        <li>
+          <Link
+            className="AddonMoreInfo-beta-versions-link"
+            href={`/addon/${addon.slug}/versions/beta`}
+          >
+            {i18n.gettext('See all beta versions')}
+          </Link>
+        </li>
       ) : null,
     });
   }
@@ -125,6 +159,7 @@ export class AddonMoreInfoBase extends React.Component<Props> {
   renderDefinitions({
     homepage = null,
     supportUrl = null,
+    supportEmail = null,
     statsLink = null,
     privacyPolicyLink = null,
     eulaLink = null,
@@ -137,65 +172,72 @@ export class AddonMoreInfoBase extends React.Component<Props> {
     const { i18n } = this.props;
     return (
       <dl className="AddonMoreInfo-contents">
-        {homepage || supportUrl ? (
-          <dt className="AddonMoreInfo-links-title">
+        {renderNodesIf(homepage || supportUrl || supportEmail, [
+          <dt className="AddonMoreInfo-links-title" key="links-title">
             {i18n.gettext('Add-on Links')}
-          </dt>
-        ) : null}
-        {homepage || supportUrl ? (
-          <dd className="AddonMoreInfo-links-contents">
+          </dt>,
+          <dd className="AddonMoreInfo-links-contents" key="links-contents">
             <ul className="AddonMoreInfo-links-contents-list">
               {homepage}
               {supportUrl}
+              {supportEmail}
             </ul>
-          </dd>
-        ) : null}
-        {version ? (
-          <dt className="AddonMoreInfo-version-title">
+          </dd>,
+        ])}
+
+        {renderNodesIf(version, [
+          <dt className="AddonMoreInfo-version-title" key="version-title">
             {i18n.gettext('Version')}
-          </dt>
-        ) : null}
-        {version ? <dd className="AddonMoreInfo-version">{version}</dd> : null}
+          </dt>,
+          <dd className="AddonMoreInfo-version" key="version-contents">
+            {version}
+          </dd>,
+        ])}
+
         <dt className="AddonMoreInfo-last-updated-title">
           {i18n.gettext('Last updated')}
         </dt>
         <dd>{versionLastUpdated}</dd>
-        {versionLicenseLink ? (
-          <dt className="AddonMoreInfo-license-title">
+
+        {renderNodesIf(versionLicenseLink, [
+          <dt className="AddonMoreInfo-license-title" key="license-title">
             {i18n.gettext('License')}
-          </dt>
-        ) : null}
-        {versionLicenseLink ? <dd>{versionLicenseLink}</dd> : null}
-        {privacyPolicyLink ? (
-          <dt className="AddonMoreInfo-privacy-policy-title">
+          </dt>,
+          <dd key="license-contents">{versionLicenseLink}</dd>,
+        ])}
+
+        {renderNodesIf(privacyPolicyLink, [
+          <dt className="AddonMoreInfo-privacy-policy-title" key="privacy-title">
             {i18n.gettext('Privacy Policy')}
-          </dt>
-        ) : null}
-        {privacyPolicyLink ? <dd>{privacyPolicyLink}</dd> : null}
-        {eulaLink ? (
-          <dt className="AddonMoreInfo-eula-title">
+          </dt>,
+          <dd key="privacy-contents">{privacyPolicyLink}</dd>,
+        ])}
+
+        {renderNodesIf(eulaLink, [
+          <dt className="AddonMoreInfo-eula-title" key="eula-title">
             {i18n.gettext('End-User License Agreement')}
-          </dt>
-        ) : null}
-        {eulaLink ? <dd>{eulaLink}</dd> : null}
-        {versionHistoryLink ? (
-          <dt className="AddonMoreInfo-version-history-title">
+          </dt>,
+          <dd key="eula-contents">{eulaLink}</dd>,
+        ])}
+
+        {renderNodesIf((versionHistoryLink || betaVersionsLink), [
+          <dt className="AddonMoreInfo-version-history-title" key="history-title">
             {i18n.gettext('Version History')}
-          </dt>
-        ) : null}
-        {versionHistoryLink ? <dd>{versionHistoryLink}</dd> : null}
-        {betaVersionsLink ? (
-          <dt className="AddonMoreInfo-beta-versions-title">
-            {i18n.gettext('Beta Versions')}
-          </dt>
-        ) : null}
-        {betaVersionsLink ? <dd>{betaVersionsLink}</dd> : null}
-        {statsLink ? (
-          <dt className="AddonMoreInfo-stats-title">
+          </dt>,
+          <dd key="history-contents">
+            <ul className="AddonMoreInfo-links-contents-list">
+              {versionHistoryLink}
+              {betaVersionsLink}
+            </ul>
+          </dd>,
+        ])}
+
+        {renderNodesIf(statsLink, [
+          <dt className="AddonMoreInfo-stats-title" key="stats-title">
             {i18n.gettext('Usage Statistics')}
-          </dt>
-        ) : null}
-        {statsLink ? <dd>{statsLink}</dd> : null}
+          </dt>,
+          <dd key="stats-contents">{statsLink}</dd>,
+        ])}
       </dl>
     );
   }
@@ -216,9 +258,10 @@ export class AddonMoreInfoBase extends React.Component<Props> {
   }
 }
 
-export const mapStateToProps = (state: Object) => {
+export const mapStateToProps = (state: {| user: UserStateType |}) => {
   return {
     userId: state.user.id,
+    hasStatsPermission: hasPermission(state, STATS_VIEW),
   };
 };
 

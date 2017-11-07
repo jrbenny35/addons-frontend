@@ -63,6 +63,7 @@ describe(__filename, () => {
           featured: true,
           page: 2,
           q: 'burger',
+          tag: 'firefox57',
         },
       },
     });
@@ -71,7 +72,24 @@ describe(__filename, () => {
       featured: true,
       page: 2,
       q: 'burger',
+      tag: 'firefox57',
     });
+  });
+
+  it('preserves category in paginationQueryParams', () => {
+    const query = {
+      // The API is responsible for defining category strings.
+      category: 'some-category',
+    };
+
+    const root = render({
+      location: {
+        query: { ...query, q: 'search term' },
+      },
+    });
+
+    const params = root.find(Search).prop('paginationQueryParams');
+    expect(params).toMatchObject(query);
   });
 
   describe('mapStateToProps()', () => {

@@ -1,5 +1,5 @@
 /* @flow */
-import { LOG_OUT_USER } from 'core/constants';
+import { ADMIN_SUPER_POWERS, LOG_OUT_USER } from 'core/constants';
 
 
 const LOAD_USER_PROFILE = 'LOAD_USER_PROFILE';
@@ -9,12 +9,14 @@ export type UserStateType = {
   id: ?number,
   username: ?string,
   displayName: ?string,
+  permissions: ?Array<string>,
 };
 
 export const initialState: UserStateType = {
   id: null,
   username: null,
   displayName: null,
+  permissions: null,
 };
 
 export const loadUserProfile = ({ profile }: Object) => {
@@ -43,6 +45,22 @@ export const selectDisplayName = (state: { user: UserStateType }) => {
   return state.user.username;
 };
 
+export const hasPermission = (
+  state: { user: UserStateType }, permission: string,
+): boolean => {
+  const permissions = state.user.permissions;
+  if (!permissions) {
+    return false;
+  }
+
+  // Admins have absolutely all permissions.
+  if (permissions.includes(ADMIN_SUPER_POWERS)) {
+    return true;
+  }
+
+  return permissions.includes(permission);
+};
+
 export default function reducer(
   state: UserStateType = initialState,
   action: Action = {}
@@ -56,6 +74,7 @@ export default function reducer(
         id: payload.profile.id,
         username: payload.profile.username,
         displayName: payload.profile.display_name,
+        permissions: payload.profile.permissions,
       };
     case LOG_OUT_USER:
       return initialState;

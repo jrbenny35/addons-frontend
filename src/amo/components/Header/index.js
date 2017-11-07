@@ -12,7 +12,6 @@ import AuthenticateButton, {
 import { isAuthenticated, selectDisplayName } from 'core/reducers/user';
 import { VIEW_CONTEXT_HOME } from 'core/constants';
 import translate from 'core/i18n/translate';
-import Icon from 'ui/components/Icon';
 import DropdownMenu from 'ui/components/DropdownMenu';
 import DropdownMenuItem from 'ui/components/DropdownMenuItem';
 
@@ -55,11 +54,12 @@ export class HeaderBase extends React.Component {
 
     const headerLink = (
       <Link className="Header-title" to="/">
-        <Icon className="Header-addons-icon" name="fox" />
-        {
-          // translators: "Firefox" should not be translated. :-)
-          i18n.gettext('Firefox Add-ons')
-        }
+        <span className="visually-hidden">
+          {
+            // translators: "Firefox" should not be translated. :-)
+            i18n.gettext('Firefox Add-ons')
+          }
+        </span>
       </Link>
     );
 
@@ -93,6 +93,14 @@ export class HeaderBase extends React.Component {
             >
               <DropdownMenuItem>{i18n.gettext('My Account')}</DropdownMenuItem>
               <DropdownMenuItem>
+                <Link
+                  className="Header-user-menu-collections-link"
+                  href={`/collections/${username}/`}
+                >
+                  {i18n.gettext('View My Collections')}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
                 <Link href={`/user/${username}/`}>
                   {i18n.gettext('View Profile')}
                 </Link>
@@ -118,14 +126,6 @@ export class HeaderBase extends React.Component {
                   prependClientApp={false}
                 >
                   {i18n.gettext('Submit a New Theme')}
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link
-                  href="/developers/addon/api/key/"
-                  prependClientApp={false}
-                >
-                  {i18n.gettext('Manage API Keys')}
                 </Link>
               </DropdownMenuItem>
 

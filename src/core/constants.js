@@ -166,6 +166,7 @@ export const INSTALL_ERROR = 'INSTALL_ERROR';
 
 // Tracking categories.
 export const INSTALL_CATEGORY = 'AMO Addon / Theme Installs';
+export const INSTALL_STARTED_CATEGORY = 'AMO Addon / Theme Installs Started';
 export const UNINSTALL_CATEGORY = 'AMO Addon / Theme Uninstalls';
 export const CLICK_CATEGORY = 'AMO Addon / Theme Clicks';
 
@@ -196,6 +197,10 @@ export const ERROR_UNKNOWN = 'ERROR_UNKNOWN';
 export const API_ERROR_DECODING_SIGNATURE = 'ERROR_DECODING_SIGNATURE';
 export const API_ERROR_INVALID_HEADER = 'ERROR_INVALID_HEADER';
 export const API_ERROR_SIGNATURE_EXPIRED = 'ERROR_SIGNATURE_EXPIRED';
+// Interpreted error codes.
+export const ERROR_ADDON_DISABLED_BY_DEV = 'ERROR_ADDON_DISABLED_BY_DEV';
+export const ERROR_ADDON_DISABLED_BY_ADMIN =
+  'ERROR_ADDON_DISABLED_BY_ADMIN';
 
 // This is the limit in milleseconds for how long a setTimeout delay can be.
 // No setTimeout should be scheduled for this time because it
@@ -216,3 +221,17 @@ export const CATEGORY_COLORS = {
   [ADDON_TYPE_OPENSEARCH]: 12,
   [ADDON_TYPE_THEME]: 12,
 };
+
+// Can access the website admin interface index page. Inner pages may require
+// other/additional permissions.
+export const ADMIN_TOOLS_VIEW = 'AdminTools:View';
+// Allows viewing and editing of any add-ons details in developer tools.
+export const ADDONS_EDIT = 'Addons:Edit';
+// Can access the add-on reviewer tools to approve/reject add-on submissions.
+export const ADDONS_REVIEW = 'Addons:Review';
+// Can access the theme reviewer tools to approve/reject theme submissions.
+export const THEMES_REVIEW = 'Personas:Review';
+// Can view statistics for all addons, regardless of privacy settings.
+export const STATS_VIEW = 'Stats:View';
+// Admin super powers. Very few users will have this permission.
+export const ADMIN_SUPER_POWERS = 'Admin:%';

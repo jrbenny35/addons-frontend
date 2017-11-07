@@ -1,7 +1,9 @@
 import React from 'react';
 
 import fallbackIcon from 'amo/img/icons/default-64.png';
-import { fetchReviews, setAddonReviews } from 'amo/actions/reviews';
+import {
+  clearAddonReviews, fetchReviews, setAddonReviews,
+} from 'amo/actions/reviews';
 import { setViewContext } from 'amo/actions/viewContext';
 import AddonReviewList, {
   AddonReviewListBase,
@@ -9,10 +11,12 @@ import AddonReviewList, {
 import AddonReviewListItem from 'amo/components/AddonReviewListItem';
 import NotFound from 'amo/components/ErrorPage/NotFound';
 import Link from 'amo/components/Link';
+import RatingManager from 'amo/components/RatingManager';
 import Paginate from 'core/components/Paginate';
 import {
   ADDON_TYPE_EXTENSION,
   ADDON_TYPE_THEME,
+  CLIENT_APP_FIREFOX,
 } from 'core/constants';
 import {
   fetchAddon, createInternalAddon, loadAddons,
@@ -33,10 +37,12 @@ import LoadingText from 'ui/components/LoadingText';
 
 
 describe(__filename, () => {
+  const clientApp = CLIENT_APP_FIREFOX;
+  const lang = 'en-US';
   let store;
 
   beforeEach(() => {
-    store = dispatchClientMetadata().store;
+    store = dispatchClientMetadata({ clientApp, lang }).store;
   });
 
   const render = ({
@@ -92,7 +98,7 @@ describe(__filename, () => {
       expect(root.find('.AddonReviewList-header-icon img').prop('src'))
         .toEqual(fallbackIcon);
       expect(root.find('.AddonReviewList-header-text').find(LoadingText))
-        .toHaveLength(2);
+        .toHaveLength(3);
 
       // Make sure four review placeholders were rendered.
       expect(root.find(AddonReviewListItem)).toHaveLength(4);
@@ -424,6 +430,48 @@ describe(__filename, () => {
         .toThrowError(/cannot access addonURL/);
     });
 
+    it('renders author names without links if no URLs', () => {
+      const addon = {
+        ...fakeAddon,
+        authors: [
+          {
+            name: 'Hayley',
+            url: null,
+          },
+        ],
+      };
+      dispatchAddon(addon);
+      const root = render();
+
+      const h3 = root.find('.AddonReviewList-header-authors');
+
+      expect(h3.render().text()).toEqual('by Hayley');
+      expect(h3.render().find('a')).toHaveLength(0);
+    });
+
+    it('renders author names with URLs if they exist', () => {
+      const addon = {
+        ...fakeAddon,
+        authors: [
+          {
+            name: 'Chantal',
+            url: 'http://www.carolynmark.com/',
+          },
+          {
+            name: 'Leroy',
+            url: 'http://www.carolynmark.com/',
+          },
+        ],
+      };
+      dispatchAddon(addon);
+      const root = render();
+
+      const h3 = root.find('.AddonReviewList-header-authors');
+
+      expect(h3.render().text()).toEqual('by Chantal, Leroy');
+      expect(h3.render().find('a')).toHaveLength(2);
+    });
+
     it('configures a paginator with the right URL', () => {
       dispatchAddon();
       dispatchAddonReviews();
@@ -476,6 +524,59 @@ describe(__filename, () => {
     it('does not render an HTML title when there is no add-on', () => {
       const root = render();
       expect(root.find('title')).toHaveLength(0);
+    });
+
+    it('configures a rating manager', () => {
+      dispatchAddon(fakeAddon);
+      const location = { query: {} };
+      const root = render({ reviews: null, location });
+
+      const manager = root.find(RatingManager);
+      expect(manager).toHaveLength(1);
+
+      const instanceProps = root.instance().props;
+      expect(manager).toHaveProp('addon', instanceProps.addon);
+      expect(manager).toHaveProp('location', location);
+      expect(manager)
+        .toHaveProp('version', instanceProps.addon.current_version);
+      expect(manager).toHaveProp('onReviewSubmitted');
+    });
+
+    it('handles a submitted review', () => {
+      const addonSlug = 'some-slug';
+      dispatchAddon({ ...fakeAddon, slug: addonSlug });
+      const dispatchSpy = sinon.spy(store, 'dispatch');
+      const root = render({ reviews: null, params: { addonSlug } });
+
+      const manager = root.find(RatingManager);
+      expect(manager).toHaveProp('onReviewSubmitted');
+      const onReviewSubmitted = manager.prop('onReviewSubmitted');
+
+      // Simulate a review submission.
+      onReviewSubmitted();
+
+      sinon.assert.calledWith(
+        dispatchSpy, clearAddonReviews({ addonSlug })
+      );
+    });
+
+    it('resets the page after submitting a review', () => {
+      const router = { push: sinon.stub() };
+      dispatchAddon({ ...fakeAddon });
+      const location = { query: { page: 2 } };
+      const root = render({ reviews: null, router, location });
+
+      const manager = root.find(RatingManager);
+      expect(manager).toHaveProp('onReviewSubmitted');
+      const onReviewSubmitted = manager.prop('onReviewSubmitted');
+
+      // Simulate a review submission.
+      onReviewSubmitted();
+
+      sinon.assert.calledWith(router.push, {
+        pathname: `/${lang}/${clientApp}${root.instance().url()}`,
+        query: { page: 1 },
+      });
     });
   });
 });

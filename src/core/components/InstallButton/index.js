@@ -7,16 +7,22 @@ import { connect } from 'react-redux';
 
 import InstallSwitch from 'core/components/InstallSwitch';
 import {
-  ADDON_TYPE_OPENSEARCH, ADDON_TYPE_THEME, validAddonTypes,
+  ADDON_TYPE_OPENSEARCH,
+  ADDON_TYPE_THEME,
+  INSTALL_STARTED_CATEGORY,
+  TRACKING_TYPE_EXTENSION,
+  validAddonTypes,
 } from 'core/constants';
 import translate from 'core/i18n/translate';
 import { findInstallURL } from 'core/installAddon';
 import log from 'core/logger';
 import { getThemeData } from 'core/themePreview';
+import tracking from 'core/tracking';
 import {
   getClientCompatibility as _getClientCompatibility,
 } from 'core/utils/compatibility';
 import Button from 'ui/components/Button';
+import Icon from 'ui/components/Icon';
 
 import './styles.scss';
 
@@ -50,6 +56,7 @@ export class InstallButtonBase extends React.Component {
     useButton: PropTypes.bool,
     userAgentInfo: PropTypes.string.isRequired,
     _log: PropTypes.object,
+    _tracking: PropTypes.object,
     _window: PropTypes.object,
   }
 
@@ -57,6 +64,7 @@ export class InstallButtonBase extends React.Component {
     getClientCompatibility: _getClientCompatibility,
     useButton: false,
     _log: log,
+    _tracking: tracking,
     _window: typeof window !== 'undefined' ? window : {},
   }
 
@@ -64,6 +72,16 @@ export class InstallButtonBase extends React.Component {
     event.preventDefault();
     const { addon, status, installTheme } = this.props;
     installTheme(event.currentTarget, { ...addon, status });
+  }
+
+  trackInstallStarted({ addonName }) {
+    const { _tracking } = this.props;
+
+    _tracking.sendEvent({
+      action: TRACKING_TYPE_EXTENSION,
+      category: INSTALL_STARTED_CATEGORY,
+      label: addonName,
+    });
   }
 
   render() {
@@ -107,6 +125,7 @@ export class InstallButtonBase extends React.Component {
           data-browsertheme={JSON.stringify(getThemeData(addon))}
           onClick={this.installTheme}
         >
+          <Icon name="plus" />
           {i18n.gettext('Install Theme')}
         </Button>
       );
@@ -117,6 +136,7 @@ export class InstallButtonBase extends React.Component {
 
         _log.info('Adding OpenSearch Provider', { addon });
         _window.external.AddSearchProvider(installURL);
+        this.trackInstallStarted({ addonName: addon.name });
 
         return false;
       };
@@ -129,6 +149,7 @@ export class InstallButtonBase extends React.Component {
           prependClientApp={false}
           prependLang={false}
         >
+          <Icon name="plus" />
           {i18n.gettext('Add to Firefox')}
         </Button>
       );
@@ -137,7 +158,9 @@ export class InstallButtonBase extends React.Component {
         event.preventDefault();
         event.stopPropagation();
         return false;
-      } : null;
+      } : () => {
+        this.trackInstallStarted({ addonName: addon.name });
+      };
       button = (
         <Button
           className={buttonClass}
@@ -147,6 +170,7 @@ export class InstallButtonBase extends React.Component {
           prependClientApp={false}
           prependLang={false}
         >
+          <Icon name="plus" />
           {i18n.gettext('Add to Firefox')}
         </Button>
       );
