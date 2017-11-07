@@ -13,7 +13,7 @@ _aliases:
       - export PATH=$HOME/geckodriver:$PATH
       - firefox --version
       - geckodriver --version
-    install: pip install tox
+      - pip install tox
     before_script:
       - sh -e /etc/init.d/xvfb start
       - sleep 5
