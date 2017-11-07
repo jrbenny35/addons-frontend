@@ -3,6 +3,7 @@ _aliases:
   - &ui-tests
     addons:
       firefox: latest-nightly
+      hosts: example.com
     apt:
       packages:
         - jwm
